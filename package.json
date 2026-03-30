@@ -1,0 +1,17 @@
+{
+  "name": "juego_ordenamiento",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "devDependencies": {
+    "vite": "^8.0.1",
+    "vite-plugin-pwa": "^1.2.0"
+  }
+}
