@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="description" content="Juego de ordenamiento de líquidos con niveles infinitos." />
+    <title>Cromatismo Líquido</title>
+    <script type="module" crossorigin src="/cromatismo-liquido/assets/index-ERX63POK.js"></script>
+    <link rel="stylesheet" crossorigin href="/cromatismo-liquido/assets/index-Cxr2zzOn.css">
+  <link rel="manifest" href="/cromatismo-liquido/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/cromatismo-liquido/registerSW.js"></script></head>
+  <body>
+    <div id="app">
+      <header>
+        <div class="stats">
+          <div class="level-info">Nivel <span id="level-number">1</span></div>
+          <div class="rewards-info">✨ <span id="gems-count">0</span></div>
+        </div>
+        <div class="actions">
+          <button id="home-btn" title="Inicio / Reiniciar Todo">🏠</button>
+          <button id="undo-btn" title="Deshacer">↩</button>
+          <button id="reset-btn" title="Reiniciar">⟳</button>
+        </div>
+      </header>
+      
+      <main id="game-board">
+        <!-- Los tubos se generarán aquí -->
+      </main>
+
+      <!-- MODAL DE VICTORIA -->
+      <div id="victory-modal" class="modal hidden">
+        <div class="modal-content">
+          <h2 class="animate-bounce">¡Nivel Superado!</h2>
+          <div class="reward-gain">+10 Gotas de Luz ✨</div>
+          <div class="stats-summary">
+            Niveles superados: <span id="total-completed">0</span>
+          </div>
+          <button id="next-level-btn-modal">Siguiente Nivel</button>
+        </div>
+      </div>
+
+      <!-- MODAL DE REINICIO GLOBAL -->
+      <div id="reset-modal" class="modal hidden">
+        <div class="modal-content">
+          <h2>⚠️ Atención</h2>
+          <div class="reward-gain" style="margin-bottom: 20px;">¿Deseas reiniciar TODO el progreso y perder tus gemas?</div>
+          <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="confirm-reset-btn">Aceptar</button>
+            <button id="cancel-reset-btn" style="background: #475569;">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <footer>
+        <button id="next-level-btn" class="hidden">Siguiente Nivel</button>
+      </footer>
+    </div>
+  </body>
+</html>
