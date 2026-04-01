@@ -7,9 +7,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons.svg', 'pwa-192x192.png', 'pwa-512x512.png'],
       manifest: {
-        name: 'Cromatismo Líquido',
-        short_name: 'Cromatismo',
-        description: 'Juego de ordenamiento de líquidos infinito',
+        name: 'Liquid',
+        short_name: 'Liquid',
+        description: 'Juego de ordenamiento de líquidos premium',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',

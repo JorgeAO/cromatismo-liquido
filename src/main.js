@@ -18,38 +18,57 @@ let gameState = {
   level: parseInt(localStorage.getItem('currentLevel')) || 1,
   completedLevels: parseInt(localStorage.getItem('completedLevels')) || 0,
   gems: parseInt(localStorage.getItem('gems')) || 0,
-  ownedSkins: JSON.parse(localStorage.getItem('ownedSkins')) || ['classic'],
-  currentSkin: localStorage.getItem('currentSkin') || 'classic',
   tubes: [], // Array de objetos { capacity: 4, layers: [{color, revealed}, ...] }
   selectedTubeIndex: null,
   history: []
 };
 
 // ELEMENTOS DEL DOM
-let board, levelNumLabel, gemsCountLabel, undoBtn, resetBtn, homeBtn, nextLevelBtn, shopBtn, extraTubeBtn;
+let board, levelNumLabel, gemsCountLabel, undoBtn, resetBtn, homeBtn, nextLevelBtn, extraTubeBtn;
 let victoryModal, nextLevelBtnModal, totalCompletedLabel;
 let resetModal, confirmResetBtn, cancelResetBtn;
-let shopModal, closeShopBtn, shopGemsCount;
 
 function initDOMElements() {
-  board = document.getElementById('game-board');
-  levelNumLabel = document.getElementById('level-number');
-  gemsCountLabel = document.getElementById('gems-count');
-  undoBtn = document.getElementById('undo-btn');
-  resetBtn = document.getElementById('reset-btn');
-  homeBtn = document.getElementById('home-btn');
-  shopBtn = document.getElementById('shop-btn');
-  extraTubeBtn = document.getElementById('extra-tube-btn');
-  nextLevelBtn = document.getElementById('next-level-btn');
-  victoryModal = document.getElementById('victory-modal');
-  nextLevelBtnModal = document.getElementById('next-level-btn-modal');
-  totalCompletedLabel = document.getElementById('total-completed');
-  resetModal = document.getElementById('reset-modal');
-  confirmResetBtn = document.getElementById('confirm-reset-btn');
-  cancelResetBtn = document.getElementById('cancel-reset-btn');
-  shopModal = document.getElementById('shop-modal');
-  closeShopBtn = document.getElementById('close-shop-btn');
-  shopGemsCount = document.getElementById('shop-gems-count');
+  const elements = [
+    { name: 'board', id: 'game-board' },
+    { name: 'levelNumLabel', id: 'level-number' },
+    { name: 'gemsCountLabel', id: 'gems-count' },
+    { name: 'undoBtn', id: 'undo-btn' },
+    { name: 'resetBtn', id: 'reset-btn' },
+    { name: 'homeBtn', id: 'home-btn' },
+    { name: 'extraTubeBtn', id: 'extra-tube-btn' },
+    { name: 'nextLevelBtn', id: 'next-level-btn' },
+    { name: 'victoryModal', id: 'victory-modal' },
+    { name: 'nextLevelBtnModal', id: 'next-level-btn-modal' },
+    { name: 'totalCompletedLabel', id: 'total-completed' },
+    { name: 'resetModal', id: 'reset-modal' },
+    { name: 'confirmResetBtn', id: 'confirm-reset-btn' },
+    { name: 'cancelResetBtn', id: 'cancel-reset-btn' }
+  ];
+
+  elements.forEach(item => {
+    const el = document.getElementById(item.id);
+    if (!el) {
+    //  console.warn(`⚠️ Warning: Element with ID '${item.id}' not found!`);
+    }
+    // Asignar dinámicamente a las variables globales
+    switch(item.name) {
+      case 'board': board = el; break;
+      case 'levelNumLabel': levelNumLabel = el; break;
+      case 'gemsCountLabel': gemsCountLabel = el; break;
+      case 'undoBtn': undoBtn = el; break;
+      case 'resetBtn': resetBtn = el; break;
+      case 'homeBtn': homeBtn = el; break;
+      case 'extraTubeBtn': extraTubeBtn = el; break;
+      case 'nextLevelBtn': nextLevelBtn = el; break;
+      case 'victoryModal': victoryModal = el; break;
+      case 'nextLevelBtnModal': nextLevelBtnModal = el; break;
+      case 'totalCompletedLabel': totalCompletedLabel = el; break;
+      case 'resetModal': resetModal = el; break;
+      case 'confirmResetBtn': confirmResetBtn = el; break;
+      case 'cancelResetBtn': cancelResetBtn = el; break;
+    }
+  });
 }
 
 /**
@@ -221,8 +240,6 @@ function checkWin() {
     
     localStorage.setItem('gems', gameState.gems);
     localStorage.setItem('completedLevels', gameState.completedLevels);
-    
-    updateShopUI(); // Actualizar gemas en la tienda
 
     // Mostrar Modal
     totalCompletedLabel.textContent = gameState.completedLevels;
@@ -264,13 +281,14 @@ function triggerVictoryParticles() {
  * Renderizado del DOM
  */
 function render() {
-  levelNumLabel.textContent = gameState.level;
-  gemsCountLabel.textContent = gameState.gems;
+  if (levelNumLabel) levelNumLabel.textContent = gameState.level;
+  if (gemsCountLabel) gemsCountLabel.textContent = gameState.gems;
+  if (!board) return;
   board.innerHTML = '';
 
   gameState.tubes.forEach((tube, i) => {
     const tubeEl = document.createElement('div');
-    tubeEl.className = `tube ${gameState.currentSkin} ${gameState.selectedTubeIndex === i ? 'selected' : ''}`;
+    tubeEl.className = `tube ${gameState.selectedTubeIndex === i ? 'selected' : ''}`;
     tubeEl.style.height = `calc(${tube.capacity} * 55px)`; // Ajuste dinámico de altura
     tubeEl.onclick = () => handleTubeClick(i);
 
@@ -347,48 +365,6 @@ function setupEventListeners() {
     };
   }
 
-  // Tienda
-  if (shopBtn) {
-    shopBtn.onclick = () => {
-      shopModal.classList.remove('hidden');
-      updateShopUI();
-    };
-  }
-
-  if (closeShopBtn) {
-    closeShopBtn.onclick = () => shopModal.classList.add('hidden');
-  }
-
-  // Delegación de eventos para botones de compra
-  shopModal.onclick = (e) => {
-    if (e.target.classList.contains('buy-btn')) {
-      const skinItem = e.target.closest('.skin-item');
-      const skin = skinItem.dataset.skin;
-      const cost = parseInt(e.target.dataset.cost);
-
-      if (gameState.gems >= cost) {
-        gameState.gems -= cost;
-        gameState.ownedSkins.push(skin);
-        localStorage.setItem('gems', gameState.gems);
-        localStorage.setItem('ownedSkins', JSON.stringify(gameState.ownedSkins));
-        updateShopUI();
-        render(); // Para actualizar gemas en header
-      } else {
-        alert('¡No tienes suficientes Gotas de Luz!');
-      }
-    } else if (e.target.closest('.skin-item')) {
-      const skinItem = e.target.closest('.skin-item');
-      const skin = skinItem.dataset.skin;
-      
-      if (gameState.ownedSkins.includes(skin)) {
-        gameState.currentSkin = skin;
-        localStorage.setItem('currentSkin', skin);
-        updateShopUI();
-        render();
-      }
-    }
-  };
-
   // Power-up Extra Tube
   if (extraTubeBtn) {
     extraTubeBtn.onclick = () => {
@@ -413,21 +389,7 @@ function setupEventListeners() {
 }
 
 function updateShopUI() {
-  if (!shopModal) return;
-  shopGemsCount.textContent = gameState.gems;
-
-  document.querySelectorAll('.skin-item').forEach(item => {
-    const skin = item.dataset.skin;
-    const btn = item.querySelector('button');
-    
-    item.classList.toggle('selected', gameState.currentSkin === skin);
-
-    if (gameState.ownedSkins.includes(skin)) {
-      btn.textContent = gameState.currentSkin === skin ? 'Equipado' : 'Equipar';
-      btn.disabled = gameState.currentSkin === skin;
-      btn.classList.remove('buy-btn');
-    }
-  });
+  // Función eliminada (skins desactivadas)
 }
 
 // INICIO
