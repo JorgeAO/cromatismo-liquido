@@ -1,5 +1,5 @@
 :root {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Outfit', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -15,7 +15,6 @@
   --tube-width: 60px;
   --tube-height: 220px;
   --tube-radius: 30px;
-  --liquid-level: 50px;
 }
 
 * {
@@ -110,8 +109,8 @@ button:active {
 .tube {
   width: var(--tube-width);
   height: var(--tube-height);
-  border: 4px solid rgba(255, 255, 255, 0.15);
-  border-top-color: transparent;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
   border-bottom-left-radius: var(--tube-radius);
   border-bottom-right-radius: var(--tube-radius);
   position: relative;
@@ -119,9 +118,23 @@ button:active {
   display: flex;
   flex-direction: column-reverse;
   cursor: pointer;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
+  box-shadow: 
+    inset 0 0 10px rgba(255, 255, 255, 0.05),
+    0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.tube::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 20%;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent);
+  pointer-events: none;
 }
 
 .tube.selected {
@@ -132,20 +145,55 @@ button:active {
 
 .liquid {
   width: 100%;
-  height: var(--liquid-level);
-  transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  box-shadow: inset 0 6px 10px rgba(0, 0, 0, 0.2);
+}
+
+.liquid.mystery {
+  background-color: #334155 !important;
+}
+
+.liquid.mystery::after {
+  content: '?';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.liquid::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: -50%;
+  width: 200%;
+  height: 30px;
+  background: inherit;
+  filter: brightness(1.2);
+  border-radius: 40%;
+  animation: wave 4s infinite linear;
+  opacity: 0.8;
 }
 
 .liquid::after {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 2px;
-  background: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+  top: -10px;
+  left: -50%;
+  width: 200%;
+  height: 25px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 45%;
+  animation: wave 6s infinite linear reverse;
+}
+
+@keyframes wave {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 footer {
@@ -177,6 +225,19 @@ footer {
 
 .invalid {
   animation: shake 0.3s ease-in-out;
+}
+
+.particle {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  z-index: 1000;
+  animation: explode 0.8s ease-out forwards;
+}
+
+@keyframes explode {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
 }
 
 /* MODAL STYLING */
@@ -237,9 +298,65 @@ footer {
   50% { transform: translateY(-10px); }
 }
 
-@media (max-height: 600px) {
-  :root {
-    --tube-height: 160px;
-    --tube-width: 50px;
-  }
+/* SHOP STYLING */
+.skins-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.skin-item {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid transparent;
+  padding: 15px;
+  border-radius: 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transition: all 0.2s;
+}
+
+.skin-item.selected {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.skin-preview {
+  width: 30px;
+  height: 60px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: transparent;
+  border-bottom-left-radius: 15px;
+  border-bottom-right-radius: 15px;
+  background: linear-gradient(to bottom, #ef4444 60%, transparent 60%);
+}
+
+.skin-item button {
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  width: 100%;
+}
+
+/* SKIN VARIATIONS */
+.tube.potion {
+  border-radius: 50% 50% 30% 30% / 10% 10% 20% 20%;
+  border-top: 4px solid rgba(255, 255, 255, 0.1);
+  width: 70px;
+}
+
+.tube.test-tube {
+  width: 50px;
+  border-bottom-left-radius: 25px;
+  border-bottom-right-radius: 25px;
+}
+
+.tube.square {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  border-radius: 0 0 8px 8px;
 }

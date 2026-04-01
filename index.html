@@ -3,10 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#0f172a" />
-    <meta name="description" content="Juego de ordenamiento de líquidos con niveles infinitos." />
-    <title>Cromatismo Líquido</title>
+    <meta name="description" content="Liquid: Juego de ordenamiento de líquidos con niveles infinitos." />
+    <title>Liquid</title>
   </head>
   <body>
     <div id="app">
@@ -16,6 +19,8 @@
           <div class="rewards-info">✨ <span id="gems-count">0</span></div>
         </div>
         <div class="actions">
+          <button id="extra-tube-btn" title="Tubo Extra (50 ✨)">🧪+</button>
+          <button id="shop-btn" title="Tienda">🛒</button>
           <button id="home-btn" title="Inicio / Reiniciar Todo">🏠</button>
           <button id="undo-btn" title="Deshacer">↩</button>
           <button id="reset-btn" title="Reiniciar">⟳</button>
@@ -35,6 +40,37 @@
             Niveles superados: <span id="total-completed">0</span>
           </div>
           <button id="next-level-btn-modal">Siguiente Nivel</button>
+        </div>
+      </div>
+
+      <!-- MODAL DE TIENDA -->
+      <div id="shop-modal" class="modal hidden">
+        <div class="modal-content shop-content">
+          <h2>Tienda de Frascos</h2>
+          <p class="stats-summary" style="margin-bottom: 20px;">Tus Gotas: ✨ <span id="shop-gems-count">0</span></p>
+          <div class="skins-grid">
+            <div class="skin-item selected" data-skin="classic">
+              <div class="skin-preview classic"></div>
+              <span>Clásico</span>
+              <button disabled>Equipado</button>
+            </div>
+            <div class="skin-item" data-skin="test-tube">
+              <div class="skin-preview test-tube"></div>
+              <span>Laboratorio</span>
+              <button class="buy-btn" data-cost="50">50 ✨</button>
+            </div>
+            <div class="skin-item" data-skin="potion">
+              <div class="skin-preview potion"></div>
+              <span>Poción</span>
+              <button class="buy-btn" data-cost="100">100 ✨</button>
+            </div>
+            <div class="skin-item" data-skin="square">
+              <div class="skin-preview square"></div>
+              <span>Moderno</span>
+              <button class="buy-btn" data-cost="150">150 ✨</button>
+            </div>
+          </div>
+          <button id="close-shop-btn" style="margin-top: 20px; background: #475569;">Cerrar</button>
         </div>
       </div>
 

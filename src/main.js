@@ -18,17 +18,18 @@ let gameState = {
   level: parseInt(localStorage.getItem('currentLevel')) || 1,
   completedLevels: parseInt(localStorage.getItem('completedLevels')) || 0,
   gems: parseInt(localStorage.getItem('gems')) || 0,
-  tubes: [], // Array de arrays [[color, color, color, color], ...]
+  ownedSkins: JSON.parse(localStorage.getItem('ownedSkins')) || ['classic'],
+  currentSkin: localStorage.getItem('currentSkin') || 'classic',
+  tubes: [], // Array de objetos { capacity: 4, layers: [{color, revealed}, ...] }
   selectedTubeIndex: null,
   history: []
 };
 
-const TUBE_CAPACITY = 4;
-
-// ELEMENTOS DEL DOM (se obtendrán al inicio)
-let board, levelNumLabel, gemsCountLabel, undoBtn, resetBtn, homeBtn, nextLevelBtn;
+// ELEMENTOS DEL DOM
+let board, levelNumLabel, gemsCountLabel, undoBtn, resetBtn, homeBtn, nextLevelBtn, shopBtn, extraTubeBtn;
 let victoryModal, nextLevelBtnModal, totalCompletedLabel;
 let resetModal, confirmResetBtn, cancelResetBtn;
+let shopModal, closeShopBtn, shopGemsCount;
 
 function initDOMElements() {
   board = document.getElementById('game-board');
@@ -37,6 +38,8 @@ function initDOMElements() {
   undoBtn = document.getElementById('undo-btn');
   resetBtn = document.getElementById('reset-btn');
   homeBtn = document.getElementById('home-btn');
+  shopBtn = document.getElementById('shop-btn');
+  extraTubeBtn = document.getElementById('extra-tube-btn');
   nextLevelBtn = document.getElementById('next-level-btn');
   victoryModal = document.getElementById('victory-modal');
   nextLevelBtnModal = document.getElementById('next-level-btn-modal');
@@ -44,6 +47,9 @@ function initDOMElements() {
   resetModal = document.getElementById('reset-modal');
   confirmResetBtn = document.getElementById('confirm-reset-btn');
   cancelResetBtn = document.getElementById('cancel-reset-btn');
+  shopModal = document.getElementById('shop-modal');
+  closeShopBtn = document.getElementById('close-shop-btn');
+  shopGemsCount = document.getElementById('shop-gems-count');
 }
 
 /**
@@ -57,14 +63,33 @@ function initLevel(level) {
   // 1. Crear tubos llenos (Estado resuelto)
   let tubes = [];
   for (let i = 0; i < numColors; i++) {
-    tubes.push(Array(TUBE_CAPACITY).fill(COLORS[i]));
+    // Variabilidad de capacidad (4 o 5 en niveles altos)
+    const capacity = (level > 10 && Math.random() > 0.7) ? 5 : 4;
+    const layers = Array(capacity).fill(0).map(() => ({ 
+      color: COLORS[i], 
+      revealed: true 
+    }));
+    tubes.push({ capacity, layers });
   }
+  
   for (let i = 0; i < numEmptyTubes; i++) {
-    tubes.push([]);
+    tubes.push({ capacity: 4, layers: [] });
   }
 
-  // 2. Desordenar (Simulando movimientos inversos)
+  // 2. Desordenar
   shuffleTubes(tubes, level * 10 + 20);
+
+  // 3. Aplicar capas ocultas (Nivel 5+)
+  if (level >= 5) {
+    tubes.forEach(tube => {
+      tube.layers.forEach((layer, idx) => {
+        // Solo las capas que NO están arriba podrían estar ocultas
+        if (idx < tube.layers.length - 1) {
+          layer.revealed = Math.random() > 0.4;
+        }
+      });
+    });
+  }
 
   gameState.tubes = tubes;
   gameState.level = level;
@@ -84,14 +109,16 @@ function shuffleTubes(tubes, moves) {
     const fromIndex = Math.floor(Math.random() * tubes.length);
     const toIndex = Math.floor(Math.random() * tubes.length);
 
-    if (fromIndex === toIndex) continue;
-    if (tubes[fromIndex].length === 0) continue;
-    if (tubes[toIndex].length === TUBE_CAPACITY) continue;
+    const fromTube = tubes[fromIndex];
+    const toTube = tubes[toIndex];
 
-    // Mover un bloque del mismo color
-    const color = tubes[fromIndex][tubes[fromIndex].length - 1];
-    tubes[fromIndex].pop();
-    tubes[toIndex].push(color);
+    if (fromIndex === toIndex) continue;
+    if (fromTube.layers.length === 0) continue;
+    if (toTube.layers.length === toTube.capacity) continue;
+
+    // Mover un bloque
+    const layer = fromTube.layers.pop();
+    toTube.layers.push(layer);
     count++;
   }
 }
@@ -102,7 +129,7 @@ function shuffleTubes(tubes, moves) {
 function handleTubeClick(index) {
   if (gameState.selectedTubeIndex === null) {
     // Seleccionar si el tubo no está vacío
-    if (gameState.tubes[index].length > 0) {
+    if (gameState.tubes[index].layers.length > 0) {
       gameState.selectedTubeIndex = index;
     }
   } else {
@@ -121,7 +148,7 @@ function handleTubeClick(index) {
         setTimeout(() => tubeEl.classList.remove('invalid'), 300);
         
         // Si tocamos otro tubo con contenido, lo seleccionamos como nuevo origen
-        if (gameState.tubes[toIdx].length > 0) {
+        if (gameState.tubes[toIdx].layers.length > 0) {
           gameState.selectedTubeIndex = toIdx;
         } else {
           gameState.selectedTubeIndex = null;
@@ -137,14 +164,14 @@ function canPour(fromIdx, toIdx) {
   const fromTube = gameState.tubes[fromIdx];
   const toTube = gameState.tubes[toIdx];
 
-  if (fromTube.length === 0) return false;
-  if (toTube.length === TUBE_CAPACITY) return false;
+  if (fromTube.layers.length === 0) return false;
+  if (toTube.layers.length === toTube.capacity) return false;
 
-  const colorToPour = fromTube[fromTube.length - 1];
-  const topColorTo = toTube[toTube.length - 1];
+  const colorToPour = fromTube.layers[fromTube.layers.length - 1].color;
+  const topColorTo = toTube.layers.length > 0 ? toTube.layers[toTube.layers.length - 1].color : null;
 
   // Regla: el color debe coincidir o el tubo destino estar vacío
-  return toTube.length === 0 || topColorTo === colorToPour;
+  return toTube.layers.length === 0 || topColorTo === colorToPour;
 }
 
 function pour(fromIdx, toIdx) {
@@ -153,15 +180,22 @@ function pour(fromIdx, toIdx) {
 
   const fromTube = gameState.tubes[fromIdx];
   const toTube = gameState.tubes[toIdx];
-  const colorToPour = fromTube[fromTube.length - 1];
+  const colorToPour = fromTube.layers[fromTube.layers.length - 1].color;
 
   // Mover todas las capas contiguas del mismo color que quepan
   while (
-    fromTube.length > 0 && 
-    fromTube[fromTube.length - 1] === colorToPour && 
-    toTube.length < TUBE_CAPACITY
+    fromTube.layers.length > 0 && 
+    fromTube.layers[fromTube.layers.length - 1].color === colorToPour && 
+    toTube.layers.length < toTube.capacity
   ) {
-    toTube.push(fromTube.pop());
+    const layer = fromTube.layers.pop();
+    layer.revealed = true; // Al moverse se revela
+    toTube.layers.push(layer);
+  }
+
+  // Revelar la nueva capa superior del tubo origen
+  if (fromTube.layers.length > 0) {
+    fromTube.layers[fromTube.layers.length - 1].revealed = true;
   }
 
   gameState.selectedTubeIndex = null;
@@ -174,9 +208,9 @@ function pour(fromIdx, toIdx) {
 
 function checkWin() {
   const isWon = gameState.tubes.every(tube => {
-    if (tube.length === 0) return true;
-    if (tube.length !== TUBE_CAPACITY) return false;
-    return tube.every(color => color === tube[0]);
+    if (tube.layers.length === 0) return true;
+    if (tube.layers.length !== tube.capacity) return false;
+    return tube.layers.every(layer => layer.color === tube.layers[0].color);
   });
 
   if (isWon) {
@@ -187,6 +221,8 @@ function checkWin() {
     
     localStorage.setItem('gems', gameState.gems);
     localStorage.setItem('completedLevels', gameState.completedLevels);
+    
+    updateShopUI(); // Actualizar gemas en la tienda
 
     // Mostrar Modal
     totalCompletedLabel.textContent = gameState.completedLevels;
@@ -196,6 +232,31 @@ function checkWin() {
     if (window.navigator?.vibrate) {
       window.navigator.vibrate([50, 30, 50]);
     }
+
+    triggerVictoryParticles();
+  }
+}
+
+function triggerVictoryParticles() {
+  const colors = ['#fde047', '#fbbf24', '#f59e0b', '#ffffff']; // Tonos dorados y blanco
+  for (let i = 0; i < 50; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const x = Math.random() * window.innerWidth;
+    const y = Math.random() * window.innerHeight;
+    const size = Math.random() * 8 + 4;
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    
+    p.style.left = `${x}px`;
+    p.style.top = `${y}px`;
+    p.style.width = `${size}px`;
+    p.style.height = `${size}px`;
+    p.style.backgroundColor = color;
+    p.style.setProperty('--dx', `${(Math.random() - 0.5) * 200}px`);
+    p.style.setProperty('--dy', `${(Math.random() - 0.5) * 200}px`);
+    
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 800);
   }
 }
 
@@ -209,14 +270,15 @@ function render() {
 
   gameState.tubes.forEach((tube, i) => {
     const tubeEl = document.createElement('div');
-    tubeEl.className = `tube ${gameState.selectedTubeIndex === i ? 'selected' : ''}`;
+    tubeEl.className = `tube ${gameState.currentSkin} ${gameState.selectedTubeIndex === i ? 'selected' : ''}`;
+    tubeEl.style.height = `calc(${tube.capacity} * 55px)`; // Ajuste dinámico de altura
     tubeEl.onclick = () => handleTubeClick(i);
 
-    tube.forEach(color => {
+    tube.layers.forEach(layer => {
       const liquidEl = document.createElement('div');
-      liquidEl.className = 'liquid';
-      liquidEl.style.backgroundColor = color;
-      liquidEl.style.height = `${100 / TUBE_CAPACITY}%`;
+      liquidEl.className = `liquid ${layer.revealed ? '' : 'mystery'}`;
+      liquidEl.style.backgroundColor = layer.color;
+      liquidEl.style.height = `${100 / tube.capacity}%`;
       tubeEl.appendChild(liquidEl);
     });
 
@@ -284,6 +346,88 @@ function setupEventListeners() {
       initLevel(gameState.level + 1);
     };
   }
+
+  // Tienda
+  if (shopBtn) {
+    shopBtn.onclick = () => {
+      shopModal.classList.remove('hidden');
+      updateShopUI();
+    };
+  }
+
+  if (closeShopBtn) {
+    closeShopBtn.onclick = () => shopModal.classList.add('hidden');
+  }
+
+  // Delegación de eventos para botones de compra
+  shopModal.onclick = (e) => {
+    if (e.target.classList.contains('buy-btn')) {
+      const skinItem = e.target.closest('.skin-item');
+      const skin = skinItem.dataset.skin;
+      const cost = parseInt(e.target.dataset.cost);
+
+      if (gameState.gems >= cost) {
+        gameState.gems -= cost;
+        gameState.ownedSkins.push(skin);
+        localStorage.setItem('gems', gameState.gems);
+        localStorage.setItem('ownedSkins', JSON.stringify(gameState.ownedSkins));
+        updateShopUI();
+        render(); // Para actualizar gemas en header
+      } else {
+        alert('¡No tienes suficientes Gotas de Luz!');
+      }
+    } else if (e.target.closest('.skin-item')) {
+      const skinItem = e.target.closest('.skin-item');
+      const skin = skinItem.dataset.skin;
+      
+      if (gameState.ownedSkins.includes(skin)) {
+        gameState.currentSkin = skin;
+        localStorage.setItem('currentSkin', skin);
+        updateShopUI();
+        render();
+      }
+    }
+  };
+
+  // Power-up Extra Tube
+  if (extraTubeBtn) {
+    extraTubeBtn.onclick = () => {
+      if (gameState.gems >= 50) {
+        // Limitar a un tubo extra por nivel
+        const extraTubesAdded = gameState.tubes.filter(t => t.isExtra).length;
+        if (extraTubesAdded >= 1) {
+          alert('Ya has añadido un tubo extra en este nivel.');
+          return;
+        }
+
+        gameState.gems -= 50;
+        gameState.tubes.push({ capacity: 4, layers: [], isExtra: true });
+        localStorage.setItem('gems', gameState.gems);
+        render();
+        updateShopUI();
+      } else {
+        alert('¡No tienes suficientes Gotas de Luz! (Necesitas 50)');
+      }
+    };
+  }
+}
+
+function updateShopUI() {
+  if (!shopModal) return;
+  shopGemsCount.textContent = gameState.gems;
+
+  document.querySelectorAll('.skin-item').forEach(item => {
+    const skin = item.dataset.skin;
+    const btn = item.querySelector('button');
+    
+    item.classList.toggle('selected', gameState.currentSkin === skin);
+
+    if (gameState.ownedSkins.includes(skin)) {
+      btn.textContent = gameState.currentSkin === skin ? 'Equipado' : 'Equipar';
+      btn.disabled = gameState.currentSkin === skin;
+      btn.classList.remove('buy-btn');
+    }
+  });
 }
 
 // INICIO

@@ -1,6 +1,6 @@
 {
-  "name": "Cromatismo Líquido",
-  "short_name": "Cromatismo",
+  "name": "Liquid",
+  "short_name": "Liquid",
   "description": "Juego de ordenamiento de líquidos infinito",
   "start_url": "/",
   "display": "standalone",
